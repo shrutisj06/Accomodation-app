@@ -108,8 +108,8 @@ class AddPropertySection extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>Edit_property(
-                          propertyId: doc.id,
+                        builder: (context) =>EditProperty(
+                          propertyId: doc.id, // Pass the property ID to EditProperty
                         ),
                       ),
                     );
@@ -143,7 +143,7 @@ class ApprovePropertiesSection extends StatelessWidget {
           separatorBuilder: (context, index) => SizedBox(height: 10),
           itemBuilder: (context, index) {
             var doc = snapshot.data!.docs[index];
-            String country = doc['country'] ?? 'N/A';
+
 
             return Container(
               decoration: BoxDecoration(
@@ -167,10 +167,6 @@ class ApprovePropertiesSection extends StatelessWidget {
                     fontSize: 16,
                     color: Colors.black,
                   ),
-                ),
-                subtitle: Text(
-                  'Country: $country',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                 ),
                 trailing: IconButton(
                   icon: Icon(

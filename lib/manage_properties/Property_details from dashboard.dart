@@ -1,115 +1,226 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
-class PropertyDetailsScreen extends StatefulWidget {
+class PropertyDetailsScreen extends StatelessWidget {
+  final Map<String, dynamic> property;
   final String propertyId;
 
-  const PropertyDetailsScreen({required this.propertyId, super.key, required Map<String, dynamic> property});
-
-  @override
-  _PropertyDetailsScreenState createState() => _PropertyDetailsScreenState();
-}
-
-class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
-  Map<String, dynamic>? property;
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    fetchPropertyDetails();
-  }
-
-  Future<void> fetchPropertyDetails() async {
-    try {
-      DocumentSnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore.instance
-          .collection('properties')
-          .doc(widget.propertyId)
-          .get();
-
-      if (snapshot.exists) {
-        setState(() {
-          property = snapshot.data();
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Property not found')),
-        );
-      }
-    } catch (error) {
-      setState(() {
-        isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching property: $error')),
-      );
-    }
-  }
+  const PropertyDetailsScreen({
+    Key? key,
+    required this.property,
+    required this.propertyId,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Loading...'),
-        ),
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    if (property == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Property Details'),
-        ),
-        body: Center(
-          child: Text('Property not found'),
-        ),
-      );
-    }
-
-    final fields = {
-      'Name': property!['name'] ?? 'Null',
-      'Location': property!['Country'] ?? 'Null',
-      'Description': property!['description'] ?? 'No description available',
-      'Rooms Available' : property!['roomAvailable'] ?? '1',
-      'Room Sharing' : property!['sharingAvailable'] ?? '0',
-      'Owner': property!['owner'] ?? 'Owner information not available',
-    };
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(property!['name'] ?? 'Property Details'),
+        title: Text("Property Details"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: fields.entries.map((entry) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    entry.key,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    entry.value,
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ],
+        child: ListView(
+          children: [
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-            );
-          }).toList(),
+              elevation: 5,
+              margin: EdgeInsets.symmetric(vertical: 10),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Property Name
+                    Text(
+                      property['name'] ?? 'Unnamed Property',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Property Type",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      property['type'] ?? 'Not available',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Furnishing Type ",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      property['furnishing'] ?? 'Not available',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 10),
+                    //room details
+                    Text(
+                      "Description: ",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      property['description'] ?? 'No description available',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Number of rooms available ",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      property.containsKey('rooms') && property['rooms'] != null
+                          ? property['rooms'].toString()
+                          : 'Not available',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Sharing available ",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      property['sharing'] ?? 'Not available',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Suitable occupants ",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      property['occupants'] ?? 'Not available',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 10),
+                    // Property Location
+                    Text(
+                      "City: ",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      property['city'] ?? 'Not specified',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Area: ",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      property['area'] ?? 'Not specified',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Pincode: ",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      property['pincode'] ?? 'Not specified',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Address: ",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      property['address'] ?? 'Not specified',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    //amenities
+                    SizedBox(height: 10),
+                    Text(
+                      "Amenities Provided: ",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Wrap(
+                      spacing: 10,
+                      children: List.generate(
+                        (property['amenities'] as List<dynamic>?)?.length ?? 0,
+                            (index) => Chip(
+                          label: Text(property['amenities'][index]),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    //owmer details
+                    Text(
+                      "Owner Information: ",
+                      style: TextStyle(
+                        fontSize:22 ,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Owner name ",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      property['ownerName'] ?? 'Not specified',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Owner Phone number ",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      property['ownerPhone'] ?? 'Not specified',
+                      style: TextStyle(fontSize: 16),
+                    ),
+
+
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

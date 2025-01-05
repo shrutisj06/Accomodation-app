@@ -98,25 +98,6 @@ class Dashboard_State extends State<Dashboard> {
                               Row(
                                 children: [
                                   Text(
-                                    "Location: ",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      property['country'] ?? 'Unknown Location',
-                                      style: TextStyle(color: Colors.grey[700]),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Text(
                                     "Description: ",
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,

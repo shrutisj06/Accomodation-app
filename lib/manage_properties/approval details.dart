@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-import 'manage properties.dart';
+import 'package:flutter/services.dart';
+import '../Models/property model.dart';
 
 class ApprovePropertyDetailsPage extends StatefulWidget {
   final String propertyId;
@@ -14,51 +14,31 @@ class ApprovePropertyDetailsPage extends StatefulWidget {
 }
 
 class _ApprovePropertyDetailsPageState extends State<ApprovePropertyDetailsPage> {
-  String? _approvalStatus;
   final _formKey = GlobalKey<FormState>();
-  Map<String, dynamic>? propertyData;
+  Property? property;
+  bool _checkboxValue = false;
+  String? _approvalStatus;
 
-  String? propertyName;
-  String? propertyType;
-  String? description;
-  String? country;
-  String? state;
-  String? city;
-  String? approvalStatus;
-  String? sharingOption;
-  String? address;
-  String? pincode;
-  String? ownerName;
-  String? ownerPhone;
-  List<String> selectedAmenities = [];
-
-  List<int> roomsAvailable = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-  int? chosenRoomAvailable;
-  List<String> sharingOptions = ['0 person sharing', '1 person sharing', '2 person sharing', '3 person sharing'];
-  List<String> amenitiesList = [
-    'Wifi',
-    'Food',
-    'Housekeeping',
-    'Laundry Service',
-    'Furnished Room',
-    'Parking',
-    'Television'
-  ];
-
-  Map<String, List<String>> countryState = {
-    'India': ['Haryana', 'Punjab'],
-    'UK': ['London'],
-  };
-
-  Map<String, List<String>> stateCity = {
-    'Haryana': ['Hisar', 'Bhiwani'],
-    'Punjab': ['Amritsar', 'Ludhiana'],
-    'London': ['Chelsea', 'Camden'],
-  };
-
-  List<String> stateList = [];
   List<String> cityList = [];
-
+  List<String> areaList = [];
+  List<String> allAmenities = [
+    "Wifi", "Food", "Housekeeping", "Laundry Service",  "Parking","Television"
+  ];
+  int? chooseroomavailable;
+  List<int> roomsavailable = [1, 2, 3, 4, 5];
+  List<String> sharingavailable = [
+    '0 person sharing',
+    '1 person sharing',
+    '2 person sharing',
+    '3 person sharing'
+  ];
+  String? choosesharingavailable;
+  List<String> genderavailability=["Only Boys","Only Girls","Both Girls and Boys","Only Family"];
+  String? choosegenderavailability;
+  List<String> furnishingtype=["Semi-furnished","Fully furnished","Unfurnished"];
+  String? choosefurnishingtype;
+  String? choosePropertyType;
+  List<String> listItems = ['Apartment', 'PG', 'Flat', 'Room'];
   @override
   void initState() {
     super.initState();
@@ -73,73 +53,88 @@ class _ApprovePropertyDetailsPageState extends State<ApprovePropertyDetailsPage>
           .get();
       if (doc.exists) {
         setState(() {
-          propertyData = doc.data() as Map<String, dynamic>?;
+          property = Property.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+          chooseroomavailable = property?.rooms;
+          choosesharingavailable=property?.sharing;
+          choosefurnishingtype=property?.furnishing;
+          choosegenderavailability=property?.occupants;
+          choosePropertyType=property?.type;
+         // print("Occupants fetched from Firestore: ${property?.occupants}");
 
-          propertyName = propertyData!['name'];
-          propertyType = propertyData!['type'];
-          description = propertyData!['description'];
-          country = propertyData!['country'];
-          state = propertyData!['state'];
-          city = propertyData!['city'];
-          approvalStatus = propertyData!['approvalStatus'];
-          chosenRoomAvailable = propertyData!['rooms'];
-          sharingOption = propertyData!['sharing'];
-          selectedAmenities = List<String>.from(propertyData!['amenities'] ?? []);
-          address = propertyData!['address'];
-          pincode = propertyData!['pincode'];
-          ownerName = propertyData!['ownerName'];
-          ownerPhone = propertyData!['ownerPhone'];
-          _checkboxValue = propertyData!['isActive'] ?? false;
-
-          if (country != null) {
-            stateList = countryState[country] ?? [];
-          }
-          if (state != null) {
-            cityList = stateCity[state] ?? [];
-          }
+          //print("Rooms fetched from Firestore: $chooseroomavailable");
+          _checkboxValue = property?.isActive ?? false;
+          _fetchCities(property?.city);
         });
       } else {
-        print("Property document does not exist.");
+        print("Property does not exist.");
       }
     } catch (e) {
       print("Error fetching property data: $e");
     }
   }
 
-  Future<void> _approveProperty() async {
+  Future<void> _fetchCities(String? selectedCity) async {
     try {
-      await FirebaseFirestore.instance.collection('properties').doc(widget.propertyId).update({
-        'isActive': _checkboxValue,
-        'approvalStatus': 'approved',
-        'name': propertyName,
-        'type': propertyType,
-        'description': description,
-        'country': country,
-        'state': state,
-        'city': city,
-        'rooms': chosenRoomAvailable,
-        'sharing': sharingOption,
-        'amenities': selectedAmenities,
-        'address': address,
-        'pincode': pincode,
-        'ownerName': ownerName,
-        'ownerPhone': ownerPhone,
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('City')
+          .get();
+
+      setState(() {
+        cityList = snapshot.docs.map((doc) => doc['cityName'] as String).toList();
+        if (selectedCity != null && cityList.contains(selectedCity)) {
+          property?.city = selectedCity;
+        }
       });
+    } catch (e) {
+      print("Error fetching cities: $e");
+    }
+  }
+
+  Future<void> _fetchAreas(String? city) async {
+    if (city == null || city.isEmpty) return;
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('Area')
+          .get();
+
+      setState(() {
+        areaList = snapshot.docs.map((doc) => doc.id).toList();
+      });
+    } catch (e) {
+      print("Error fetching areas: $e");
+    }
+  }
+
+  Future<void> _savePropertyData() async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('properties')
+          .doc(widget.propertyId)
+          .update(property!.toMap());
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Property approved successfully.')),
+        SnackBar(content: Text('Property details updated successfully.')),
       );
       Navigator.pop(context);
     } catch (e) {
-      print("Error approving property: $e");
+      print("Error saving property data: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to approve property.')),
+        SnackBar(content: Text('Failed to save property data.')),
       );
     }
   }
 
+  Future<void> _approveProperty() async {
+    property?.approvalStatus = 'approved';
+    property?.isActive = _checkboxValue;
+    await _savePropertyData();
+  }
+
   Future<void> _rejectProperty() async {
     try {
-      await FirebaseFirestore.instance.collection('properties').doc(widget.propertyId).delete();
+      await FirebaseFirestore.instance
+          .collection('properties')
+          .doc(widget.propertyId)
+          .delete();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Property rejected and removed.')),
       );
@@ -151,11 +146,10 @@ class _ApprovePropertyDetailsPageState extends State<ApprovePropertyDetailsPage>
       );
     }
   }
-  bool _checkboxValue = false;
 
   @override
   Widget build(BuildContext context) {
-    if (propertyData == null) {
+    if (property == null) {
       return Scaffold(
         appBar: AppBar(title: Text("Property Approval")),
         body: Center(child: CircularProgressIndicator()),
@@ -173,299 +167,250 @@ class _ApprovePropertyDetailsPageState extends State<ApprovePropertyDetailsPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextFormField(
-                  initialValue: propertyName,
+                  initialValue: property?.name,
                   decoration: InputDecoration(
                     labelText: 'Property Name',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      propertyName = value;
-                    });
-                  },
+                  onChanged: (value) => setState(() => property?.name = value),
                 ),
                 SizedBox(height: 20),
-                TextFormField(
-                  initialValue: propertyType,
+                DropdownButtonFormField<String>(
+                  value:  choosePropertyType!= null && listItems.contains(choosePropertyType)
+                      ? choosePropertyType
+                      : null,
                   decoration: InputDecoration(
-                    labelText: 'Property Type',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
+                      labelText: 'Property Type',
+                      border: OutlineInputBorder()),
+                  onChanged: (newValue) {
                     setState(() {
-                      propertyType = value;
+                     choosePropertyType = newValue;
+                      property?.type = newValue;
                     });
                   },
-                ),
+                  items: listItems.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),);
+                  }).toList(),),
+                SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  value: choosefurnishingtype != null && furnishingtype.contains(choosefurnishingtype)
+                      ? choosefurnishingtype
+                      : null,
+                  decoration: InputDecoration(
+                      labelText: 'Furnishing type',
+                      border: OutlineInputBorder()),
+                  onChanged: (newValue) {
+                    setState(() {
+                      choosefurnishingtype = newValue;
+                      property?.furnishing = newValue;
+                    });
+                  },
+                  items: furnishingtype.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),);
+                  }).toList(),),
                 SizedBox(height: 20),
                 TextFormField(
-                  initialValue: description,
+                  initialValue: property?.description,
                   decoration: InputDecoration(
                     labelText: 'Description',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      description = value;
-                    });
-                  },
+                  onChanged: (value) => setState(() => property?.description = value),
                 ),
                 SizedBox(height: 20),
-                Text('Room Details',style: TextStyle(fontWeight: FontWeight.bold),),
+                Text('Room Details', style: TextStyle(fontWeight: FontWeight.bold)),
                 SizedBox(height: 20),
-                DropdownButtonFormField<int>(
-                  value: chosenRoomAvailable,
+                DropdownButtonFormField<String>(
+                  value: choosesharingavailable != null && sharingavailable.contains(choosesharingavailable)
+                      ? choosesharingavailable
+                      : null,
                   decoration: InputDecoration(
-                    labelText: 'Select number of rooms available',
-                    border: OutlineInputBorder(),
-                  ),
+                      labelText: 'Sharing available',
+                      border: OutlineInputBorder()),
                   onChanged: (newValue) {
                     setState(() {
-                      chosenRoomAvailable = newValue;
+                      choosesharingavailable = newValue;
+                      property?.sharing = newValue;
                     });
                   },
-                  items: roomsAvailable.map((int value) {
+                  items: sharingavailable.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),);
+                  }).toList(),),
+                SizedBox(height: 20),
+                DropdownButtonFormField<int>(
+                  value: chooseroomavailable != null && roomsavailable.contains(chooseroomavailable)
+                      ? chooseroomavailable
+                      : null,
+                  decoration: InputDecoration(
+                      labelText: 'Rooms available',
+                      border: OutlineInputBorder()),
+                  onChanged: (newValue) {
+                    setState(() {
+                      chooseroomavailable = newValue;
+                      property?.rooms = newValue;
+                    });
+                  },
+                  items: roomsavailable.map<DropdownMenuItem<int>>((int value) {
                     return DropdownMenuItem<int>(
                       value: value,
-                      child: Text(value.toString()),
-                    );
-                  }).toList(),
-                ),
+                      child: Text(value.toString()),);
+                  }).toList(),),
                 SizedBox(height: 20),
-
-                // Sharing Option Dropdown
                 DropdownButtonFormField<String>(
-                  value: sharingOption,
+                  value: choosegenderavailability != null && genderavailability.contains(choosegenderavailability)
+                      ? choosegenderavailability
+                      : null,
                   decoration: InputDecoration(
-                    labelText: 'Select no. of persons sharing allowed',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
+                      labelText: 'Suitable occupants',
+                      border: OutlineInputBorder()),
+                  onChanged: (newValue) {
                     setState(() {
-                      sharingOption = value;
+                      choosegenderavailability = newValue;
+                      property?.occupants = newValue;
                     });
                   },
-                  items: sharingOptions.map((String option) {
+                  items: genderavailability.map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
-                      value: option,
-                      child: Text(option),
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: 20),
-
-                // Amenities Chips
-                Text('select available amenities'),
-                Wrap(
-                  spacing: 8.0,
-                  children: amenitiesList.map((amenity) {
-                    return ChoiceChip(
-                      label: Text(amenity),
-                      selected: selectedAmenities.contains(amenity),
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            selectedAmenities.add(amenity);
-                          } else {
-                            selectedAmenities.remove(amenity);
-                          }
-                        });
-                      },
-                    );
-                  }).toList(),
-                ),
+                      value: value,
+                      child: Text(value),);
+                  }).toList()),
                 SizedBox(height: 20),
                 Text(
-                  'Property Location Details',
+                  ' Available Amenities',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 20),
-                DropdownButtonFormField<String>(
-                  value: country,
-                  decoration: InputDecoration(
-                    labelText: 'Select Country',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (newValue) {
-                    setState(() {
-                      country = newValue;
-                      stateList = countryState[country] ?? [];
-                      cityList.clear();
-                    });
-                  },
-                  items: countryState.keys.map((String country) {
-                    return DropdownMenuItem<String>(
-                      value: country,
-                      child: Text(country),
+                Wrap(
+                  spacing: 8.0,
+                  children: allAmenities.map((amenity) {
+                    bool isSelected = property?.amenities?.contains(amenity) ?? false;
+                    return ChoiceChip(
+                      label: Text(amenity),
+                      selected: isSelected,
+                      onSelected: (selected) => setState(() {
+                        if (selected) {
+                          property?.amenities?.add(amenity);
+                        } else {
+                          property?.amenities?.remove(amenity);
+                        }
+                      }),
                     );
                   }).toList(),
                 ),
                 SizedBox(height: 20),
-
-                // State Dropdown
-                DropdownButtonFormField<String>(
-                  value: state,
-                  decoration: InputDecoration(
-                    labelText: 'Select State',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (newValue) {
-                    setState(() {
-                      state = newValue;
-                      cityList = stateCity[state] ?? [];
-                    });
-                  },
-                  items: stateList.map((String state) {
-                    return DropdownMenuItem<String>(
-                      value: state,
-                      child: Text(state),
-                    );
-                  }).toList(),
-                ),
+                Text('Property Location Details',
+                  style: TextStyle(fontWeight: FontWeight.bold),),
                 SizedBox(height: 20),
-
-                // City Dropdown
                 DropdownButtonFormField<String>(
-                  value: city,
+                  value: cityList.isNotEmpty && cityList.contains(property?.city)
+                      ? property?.city
+                      : null,
                   decoration: InputDecoration(
-                    labelText: 'Select City',
+                    labelText: 'City',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (newValue) {
+                  onChanged: (value) {
                     setState(() {
-                      city = newValue;
+                      property?.city = value;
+                      _fetchAreas(value);
                     });
                   },
-                  items: cityList.map((String city) {
-                    return DropdownMenuItem<String>(
+                  items: cityList.map((city) {
+                    return DropdownMenuItem(
                       value: city,
                       child: Text(city),
                     );
                   }).toList(),
                 ),
                 SizedBox(height: 20),
-                TextFormField(
-                  initialValue: pincode,
+                DropdownButtonFormField<String>(
+                  value: areaList.isNotEmpty && areaList.contains(property?.area)
+                      ? property?.area
+                      : null,
+                  decoration: InputDecoration(
+                    labelText: 'Area',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) => setState(() => property?.area = value),
+                  items: areaList.map((area) {
+                    return DropdownMenuItem(
+                      value: area,
+                      child: Text(area),
+                    );
+                  }).toList(),
+                ),
+                SizedBox(height: 20),
+                TextField(
                   decoration: InputDecoration(
                     labelText: 'Pincode',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      pincode = value;
-                    });
-                  },
+                    hintText: 'Enter area pincode',
+                    border: OutlineInputBorder(),),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: <TextInputFormatter>[
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  controller: TextEditingController(text: property?.pincode ?? ''),
+                  onChanged: (value) => setState(() => property?.pincode = value),
                 ),
                 SizedBox(height: 20),
-                TextFormField(
-                  initialValue: address,
+                TextField(
                   decoration: InputDecoration(
                     labelText: 'Address',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      address = value;
-                    });
-                  },
+                    hintText: 'Enter address',
+                    border: OutlineInputBorder(),),
+                  controller: TextEditingController(text: property?.address ?? ''),
+                  onChanged: (value) => setState(() => property?.address = value),
                 ),
                 SizedBox(height: 20),
-                Text('Owner Details',style: TextStyle(fontWeight: FontWeight.bold),),
+                Text(
+                  'Owner Details',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 SizedBox(height: 20),
-                TextFormField(
-                  initialValue: ownerName,
+                TextField(
                   decoration: InputDecoration(
                     labelText: 'Owner Name',
+                    hintText: 'Enter owner name',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      ownerName = value;
-                    });
-                  },
+                  controller: TextEditingController(text: property?.ownerName ?? ''),
+                  onChanged: (value) => setState(() => property?.ownerName = value),
                 ),
                 SizedBox(height: 20),
-
-                TextFormField(
-                  initialValue: ownerPhone,
+                TextField(
                   decoration: InputDecoration(
-                    labelText: 'Phone number',
+                    labelText: 'Phone Number',
+                    hintText: 'Enter phone number',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      ownerPhone = value;
-                    });
-                  },
+                  controller: TextEditingController(text: property?.ownerPhone ?? ''),
+                  onChanged: (value) => setState(() => property?.ownerPhone = value),
+                  keyboardType: TextInputType.phone,
                 ),
-                SizedBox(height: 20),
-
-
-                Column(crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Text("Approval Status",style: TextStyle(fontWeight: FontWeight.bold),),
-                    SizedBox(height: 10,),
-                    Column(
-                      children: [
-                        Row(
-                          children: [
-                            Radio(
-                              value: 'approve',
-                              groupValue: _approvalStatus,
-                              onChanged: (value) {
-                                setState(() {
-                                  _approvalStatus = value;
-                                });
-                              },
-                            ),
-                            Text('Approve '),
-                          ],),
-                        SizedBox(height: 10,),
-                        Row(
-                          children: [
-                            Radio(
-                              value: 'reject',
-                              groupValue: _approvalStatus,
-                              onChanged: (value) {
-                                setState(() {
-                                  _approvalStatus = value;
-                                });
-                              },
-                            ),
-                            Text('Reject '),
-                          ],
-                        ),
-                      ],
+                    ElevatedButton(
+                      onPressed: _approveProperty,
+                      child: Text('Approve'),
+                    ),
+                    ElevatedButton(
+                      onPressed: _rejectProperty,
+                      child: Text('Reject'),
                     ),
                   ],
                 ),
-              SizedBox(height: 20,),
-              ElevatedButton(onPressed: (){
-                if (_approvalStatus=='approve'){
-                  _approveProperty();
-                }
-                else if(_approvalStatus=='reject')
-                  {
-                    _rejectProperty();
-                  }
-                else{
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please select an approval status')));
-                }
-              }, child:Text('Save'),),
-              SizedBox(height: 20),
-          Row(
-            children: [
-              Checkbox(
-                value: _checkboxValue,
-                onChanged: (bool? newValue) {
-                  setState(() {
-                    _checkboxValue = newValue!;
-                  });
-                },
-              ),
-              Text('Is Active'),
-            ],),
-     ] ),
-          ))));
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:accomodation/Models/property%20model.dart';
 import 'package:accomodation/service/database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,9 +10,8 @@ import 'package:image_picker/image_picker.dart';
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
-
-
 }
+
 class _HomePageState extends State<HomePage> {
   final TextEditingController _propertyNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -28,6 +29,10 @@ class _HomePageState extends State<HomePage> {
     '2 person sharing',
     '3 person sharing'
   ];
+  List<String> genderavailability=["Only Boys","Only Girls","Both Girls and Boys","Only Family"];
+  String? choosegenderavailability;
+  List<String> furnishingtype=["Semi-furnished","Fully furnished","Unfurnished"];
+  String? choosefurnishingtype;
   String? choosesharingavailable;
   int? chooseroomavailable;
   Map<String, bool> selectedAmenities = {
@@ -35,17 +40,22 @@ class _HomePageState extends State<HomePage> {
     'Food': false,
     'Housekeeping': false,
     'Laundry Service': false,
-    'Furnished Room': false,
     'Parking': false,
     'Television': false,
   };
 
   Future<void> fetchAreas(String cityId) async {
     try {
+      print('Querying Firestore with cityId: $cityId');
       final QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('Area')
           .where('cityId', isEqualTo: cityId)
           .get();
+      print('Snapshot size: ${snapshot.size}');
+      snapshot.docs.forEach((doc) {
+        print('Doc data: ${doc.data()}');
+      });
+
       List<String> fetchedAreas = snapshot.docs
           .map((doc) => doc['areaName'] as String)
           .toList();
@@ -62,6 +72,7 @@ class _HomePageState extends State<HomePage> {
       );
     }
   }
+
   Future<void> fetchCities() async {
     try {
       final QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('City').get();
@@ -78,28 +89,19 @@ class _HomePageState extends State<HomePage> {
       );
     }
   }
+
   @override
   void initState() {
     super.initState();
     fetchCities();
   }
+
   List<String> cityList = [];
   String? selectedCity;
   List<String> areaList = [];
   String? selectedArea;
   bool isLoading = false;
-
-  List<File> _roomImages = [];
-  final ImagePicker _picker = ImagePicker();
-
-  Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() {
-        _roomImages.add(File(image.path));
-      });
-    }
-  }
+  String imageurl='';
 
   @override
   Widget build(BuildContext context) {
@@ -113,6 +115,7 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              //property details
               SizedBox(height: 20),
               TextField(
                 controller: _propertyNameController,
@@ -142,15 +145,34 @@ class _HomePageState extends State<HomePage> {
                 }).toList(),
               ),
               SizedBox(height: 20),
-              TextField(
+              DropdownButtonFormField<String>(
+                value: choosefurnishingtype,
+                decoration: InputDecoration(
+                  labelText: 'Select Furnishing Type',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (newValue) {
+                  setState(() {
+                    choosefurnishingtype = newValue;
+                  });
+                },
+                items: furnishingtype.map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+              SizedBox(height: 20),
+              TextFormField(
                 controller: _descriptionController,
                 decoration: InputDecoration(
                   labelText: 'Description',
-                  hintText: 'About the property',
                   border: OutlineInputBorder(),
                 ),
               ),
               SizedBox(height: 20),
+              //room details
               Text('Room Details', style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 20),
               DropdownButtonFormField<int>(
@@ -189,68 +211,80 @@ class _HomePageState extends State<HomePage> {
                 }).toList(),
               ),
               SizedBox(height: 20),
-
-              // Amenities checklist
+              DropdownButtonFormField<String>(
+                value:choosegenderavailability,
+                decoration: InputDecoration(
+                    labelText: 'Select suitable occupants',
+                    border: OutlineInputBorder()),
+                onChanged: (newValue) {
+                  setState(() {
+                    choosegenderavailability= newValue;
+                  });
+                },
+                items: genderavailability.map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+              SizedBox(height: 20),
+              //amenities
               Text(
                 'Select Available Amenities',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              ...selectedAmenities.keys.map((amenity) {
-                return CheckboxListTile(
-                  title: Text(amenity),
-                  value: selectedAmenities[amenity],
-                  onChanged: (bool? value) {
-                    setState(() {
-                      selectedAmenities[amenity] = value ?? false;
-                    });
-                  },
-                );
-              }).toList(),
+              SizedBox(height: 20),
+              Wrap(
+                spacing: 8.0,
+                children: selectedAmenities.keys.map((amenity) {
+                  return ChoiceChip(
+                    label: Text(amenity),
+                    selected: selectedAmenities[amenity] ?? false,
+                    onSelected: (selected) {
+                      setState(() {
+                        selectedAmenities[amenity] = selected;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+              SizedBox(height: 20),
 
-              SizedBox(height: 20),
-              Text(
-                'Property Location Details',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 20),
-              DropdownButtonFormField<String>(
-                value: selectedCity,
-                decoration: InputDecoration(
-                    labelText: 'Select City', border: OutlineInputBorder()),
-                onChanged: (newCityId) {
-                  setState(() {
-                    selectedCity = newCityId;
-                    areaList = [];
-                    selectedArea = null;
-                  });
-                  if (newCityId != null) {
-                    fetchAreas(newCityId);
-                  }
-                },
-                items: cityList.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-              SizedBox(height: 20),
-              DropdownButtonFormField<String>(
-                value: selectedArea,
-                decoration: InputDecoration(
-                    labelText: 'Select Area', border: OutlineInputBorder()),
-                onChanged: (newArea) {
-                  setState(() {
-                    selectedArea = newArea;
-                  });
-                },
-                items: areaList.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
+           //property location details
+           Text('Property Location Details',
+            style: TextStyle(fontWeight: FontWeight.bold),),
+           SizedBox(height: 20),
+           DropdownButtonFormField<String>(
+           value: selectedCity,
+           decoration: InputDecoration(labelText: 'Select City', border: OutlineInputBorder()),
+           onChanged: (newCityId) {
+          setState(() {
+            selectedCity = newCityId;
+            areaList = [];
+            selectedArea = null;});
+          if (newCityId != null) {
+            fetchAreas(newCityId);
+          }},
+           items: cityList.map<DropdownMenuItem<String>>((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );}).toList(),),
+           SizedBox(height: 20),
+           DropdownButtonFormField<String>(
+            value: selectedArea,
+            decoration: InputDecoration(
+            labelText: 'Select Area', border: OutlineInputBorder()),
+            onChanged: (newArea) {
+            setState(() {
+            selectedArea = newArea;
+          });},
+           items: areaList.map<DropdownMenuItem<String>>((String value) {
+           return DropdownMenuItem<String>(
+           value: value,
+           child: Text(value),);
+           }).toList(),),
               SizedBox(height: 20),
               TextField(
                 controller: _pincodeController,
@@ -274,11 +308,13 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               SizedBox(height: 20),
+              //owner details
               Text(
                 'Owner Details',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 20),
+              //owner section
               TextField(
                 controller: _ownerNameController,
                 decoration: InputDecoration(
@@ -298,72 +334,66 @@ class _HomePageState extends State<HomePage> {
                 keyboardType: TextInputType.phone,
               ),
               SizedBox(height: 20),
+              //upload photo
               Text('Room Photos', style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _pickImage,
-                child: Text("Upload Room Photo"),
-              ),
-              _roomImages.isNotEmpty
-                  ? Wrap(
-                spacing: 10,
-                children: _roomImages.map((image) {
-                  return Stack(
-                    children: [
-                      Image.file(
-                        image,
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                      ),
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _roomImages.remove(image);
-                            });
-                          },
-                          child: Icon(Icons.close, color: Colors.red),
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList(),
-              )
-                  : Text("No images selected"),
-              SizedBox(height: 20),
+              onPressed: ()async{
+                ImagePicker imagepicker=ImagePicker();
+                XFile? file= await imagepicker.pickImage(source: ImageSource.gallery);
+                print('image path = ${file?.path}');
 
-              // Submit button
+                if(file==null)return;
+                String filename=DateTime.now().millisecondsSinceEpoch.toString();
+                final storageRef = FirebaseStorage.instanceFor(
+                    bucket: "hdc-dev-9202b.appspot.com").ref();
+                Reference referenceDirimage=storageRef.child('Property Images');
+                Reference referenceimagetoupload=referenceDirimage.child(filename);
+
+                try {
+                  await referenceimagetoupload.putFile(File(file!.path));
+                  imageurl= await referenceimagetoupload.getDownloadURL();
+                  print('Download URL: $imageurl');
+                }
+                catch(error){}
+              },
+               child: Text("Upload Room Photo"),),
+              SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () async {
                   setState(() {
                     isLoading = true;
                   });
-
                   List<String> selectedAmenitiesList = selectedAmenities.entries
                       .where((entry) => entry.value)
                       .map((entry) => entry.key)
                       .toList();
+                  final docRef = FirebaseFirestore.instance.collection('properties').doc();
+                  Property property = Property(
+                    id: docRef.id,
+                    name: _propertyNameController.text,
+                    type: choosePropertyType ?? '',
+                    description: _descriptionController.text,
+                    furnishing: choosefurnishingtype ?? '',
+                    rooms: chooseroomavailable ?? 0,
+                    sharing: choosesharingavailable ?? '',
+                    occupants: choosegenderavailability ?? '',
+                    amenities: selectedAmenitiesList,
+                    area: selectedArea ?? '',
+                    city: selectedCity ?? '',
+                    pincode: _pincodeController.text,
+                    address: _addressController.text,
+                    ownerName: _ownerNameController.text,
+                    ownerPhone: _phoneController.text,
+                    urlimage: imageurl,
+                    approvalStatus: 'pending',
+                    isActive: true,
+                    createdAt: DateTime.timestamp(),
+                    //roomImages: _roomImages.map((e) => e.path).toList(),
+                  );
 
-                  Map<String, dynamic> propertyData = {
-                    "propertyName": _propertyNameController.text,
-                    "propertyType": choosePropertyType,
-                    "description": _descriptionController.text,
-                    "roomAvailable": chooseroomavailable,
-                    "sharingAvailable": choosesharingavailable,
-                    "amenities": selectedAmenitiesList,
-                    "state": selectedArea,
-                    "city": selectedCity,
-                    "pincode": _pincodeController.text,
-                    "address": _addressController.text,
-                    "ownerName": _ownerNameController.text,
-                    "phoneNumber": _phoneController.text,
-                    "roomImages": _roomImages.map((e) => e.path).toList(),
-                  };
 
-                  bool result = await DatabaseMethods().addProperty(propertyData);
+                  bool result = await DatabaseMethods().addProperty(property);
                   setState(() {
                     isLoading = false;
                   });
@@ -382,10 +412,12 @@ class _HomePageState extends State<HomePage> {
                       choosePropertyType = null;
                       chooseroomavailable = null;
                       choosesharingavailable = null;
+                      choosegenderavailability=null;
+                      choosefurnishingtype=null;
                       selectedAmenities.updateAll((key, value) => false);
                       selectedArea = null;
                       selectedCity = null;
-                      _roomImages.clear();
+                      //_roomImages.clear();
                     });
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(

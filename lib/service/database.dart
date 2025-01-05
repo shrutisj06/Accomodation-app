@@ -1,24 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../Models/property model.dart';
 
 class DatabaseMethods {
 
-  Future<bool> addProperty(Map<String, dynamic> propertyData) async {
+  Future<bool> addProperty(Property property) async {
     try {
-      await FirebaseFirestore.instance.collection('properties').add({
-        'name': propertyData['propertyName'],
-        'type': propertyData['propertyType'],
-        'description': propertyData['description'],
-        'rooms': propertyData['roomAvailable'],
-        'sharing': propertyData['sharingAvailable'],
-        'amenities': propertyData['amenities'],
-        'address': propertyData['address'],
-        'pincode': propertyData['pincode'],
-        'ownerName': propertyData['ownerName'],
-        'ownerPhone': propertyData['phoneNumber'],
-        'approvalStatus': 'pending',
-        'isActive': false,
-        'created_at': Timestamp.now(),
-      });
+      await FirebaseFirestore.instance.collection('properties').add(property.toMap());
 
       print('Property added successfully');
       return true;
@@ -28,56 +15,28 @@ class DatabaseMethods {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getAllCities() async {
-    try {
-      QuerySnapshot citySnapshot = await FirebaseFirestore.instance.collection('City').get();
-      return citySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
-    } catch (e) {
-      print('Error fetching cities: $e');
-      return [];
-    }
-  }
 
-  Future<List<Map<String, dynamic>>> getAllAreas() async {
+  Future<List<Property>> getAllProperties() async {
     try {
-      QuerySnapshot areaSnapshot = await FirebaseFirestore.instance.collection('Area').get();
-      return areaSnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+      QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('properties').get();
+      print('Fetched snapshot data: ${snapshot.docs.map((doc) => doc.data()).toList()}');
+
+      return snapshot.docs
+          .map((doc) => Property.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+          .toList();
     } catch (e) {
-      print('Error fetching areas: $e');
+      print('Error fetching properties: $e');
       return [];
     }
   }
 
 
-  Future<void> approveProperty(
-      String propertyId,
-      String name,
-      String type,
-      String description,
-      int rooms,
-      String sharing,
-      List<String> amenities,
-      String address,
-      String pincode,
-      String ownerName,
-      String ownerPhone,
-      bool isActive,
-      ) async {
+  // Approve a property
+  Future<void> approveProperty(String propertyId, Property property) async {
     try {
       await FirebaseFirestore.instance.collection('properties').doc(propertyId).update({
         'approvalStatus': 'approved',
-        'name': name,
-        'type': type,
-        'description': description,
-        'rooms': rooms,
-        'sharing': sharing,
-        'amenities': amenities,
-        'address': address,
-        'pincode': pincode,
-        'ownerName': ownerName,
-        'ownerPhone': ownerPhone,
-        'isActive':isActive,
-
+        ...property.toMap(),
       });
       print('Property approved and updated successfully');
     } catch (e) {
@@ -85,7 +44,7 @@ class DatabaseMethods {
     }
   }
 
-
+  // Reject
   Future<void> rejectProperty(String propertyId) async {
     try {
       await FirebaseFirestore.instance.collection('properties').doc(propertyId).delete();
@@ -95,6 +54,7 @@ class DatabaseMethods {
     }
   }
 
+  // Get city
   Future<Map<String, dynamic>> getCityData(String cityId) async {
     try {
       DocumentSnapshot citySnapshot = await FirebaseFirestore.instance.collection('City').doc(cityId).get();
@@ -109,6 +69,8 @@ class DatabaseMethods {
       return {};
     }
   }
+
+  // Get area
   Future<Map<String, dynamic>> getAreaData(String areaId) async {
     try {
       DocumentSnapshot areaSnapshot = await FirebaseFirestore.instance.collection('Area').doc(areaId).get();
@@ -123,7 +85,4 @@ class DatabaseMethods {
       return {};
     }
   }
-
-
-
 }

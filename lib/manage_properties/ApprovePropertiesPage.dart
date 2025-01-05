@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'approval details.dart';
 
+
 class ApprovePropertiesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -10,14 +11,18 @@ class ApprovePropertiesPage extends StatelessWidget {
         title: Text("Approve Properties"),
         centerTitle: true,
       ),
-      body: StreamBuilder(
+      body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('properties')
             .where('approvalStatus', isEqualTo: 'pending')
             .snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (!snapshot.hasData) {
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(child: Text("No properties awaiting approval"));
           }
 
           return ListView.separated(
@@ -28,14 +33,17 @@ class ApprovePropertiesPage extends StatelessWidget {
             ),
             itemBuilder: (context, index) {
               var doc = snapshot.data!.docs[index];
-              String name = doc.data().toString().contains('name') ? doc['name'] : 'default Property';
-
               return ListTile(
                 leading: Icon(Icons.home, color: Colors.purple),
                 title: Text(
-                  name,
+                  doc['name'] ?? 'Unnamed Property',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
+                subtitle: Text(
+                  doc['city'] ?? 'No city selected',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+
                 trailing: IconButton(
                   icon: Icon(Icons.arrow_forward_ios_outlined, color: Colors.grey),
                   onPressed: () {

@@ -1,4 +1,3 @@
-import 'package:accomodation/test%20firebase.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'dashboard.dart';
@@ -12,6 +11,7 @@ Future main() async{
         appId: "1:980107544854:android:8bb2a70e03b2c47ab26837",
         messagingSenderId: "980107544854",
         projectId: "hdc-dev-9202b"));
+
   }
   runApp(const MyApp());
 }
