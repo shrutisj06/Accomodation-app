@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../Models/property model.dart';
+import '../Models/property_model.dart';
 
 class DatabaseMethods {
 

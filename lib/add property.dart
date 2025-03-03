@@ -1,6 +1,9 @@
 import 'dart:io';
-import 'package:accomodation/Models/property%20model.dart';
-import 'package:accomodation/service/database.dart';
+import 'package:accomodation/Widgets/area_dropdown.dart';
+import 'package:accomodation/Widgets/dropdown.dart';
+
+import 'Models/property_model.dart';
+import 'service/database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -44,62 +47,62 @@ class _HomePageState extends State<HomePage> {
     'Television': false,
   };
 
-  Future<void> fetchAreas(String cityId) async {
-    try {
-      print('Querying Firestore with cityId: $cityId');
-      final QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('Area')
-          .where('cityId', isEqualTo: cityId)
-          .get();
-      print('Snapshot size: ${snapshot.size}');
-      snapshot.docs.forEach((doc) {
-        print('Doc data: ${doc.data()}');
-      });
+  // Future<void> fetchAreas(String cityId) async {
+  //   try {
+  //     print('Querying Firestore with cityId: $cityId');
+  //     final QuerySnapshot snapshot = await FirebaseFirestore.instance
+  //         .collection('Area')
+  //         .where('cityId', isEqualTo: cityId)
+  //         .get();
+  //     print('Snapshot size: ${snapshot.size}');
+  //     snapshot.docs.forEach((doc) {
+  //       print('Doc data: ${doc.data()}');
+  //     });
+  //
+  //     List<String> fetchedAreas = snapshot.docs
+  //         .map((doc) => doc['areaName'] as String)
+  //         .toList();
+  //
+  //     setState(() {
+  //       areaList = fetchedAreas;
+  //       selectedArea = null;
+  //     });
+  //     print("Area: $fetchedAreas");
+  //   } catch (e) {
+  //     print('Error fetching area data: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to fetch areas')),
+  //     );
+  //   }
+  // }
 
-      List<String> fetchedAreas = snapshot.docs
-          .map((doc) => doc['areaName'] as String)
-          .toList();
-
-      setState(() {
-        areaList = fetchedAreas;
-        selectedArea = null;
-      });
-      print("Area: $fetchedAreas");
-    } catch (e) {
-      print('Error fetching area data: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch areas')),
-      );
-    }
-  }
-
-  Future<void> fetchCities() async {
-    try {
-      final QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('City').get();
-      List<String> fetchedCities = snapshot.docs.map((doc) => doc['cityName'] as String).toList();
-
-      setState(() {
-        cityList = fetchedCities;
-      });
-      print("Cities: $fetchedCities");
-    } catch (e) {
-      print('Error fetching city data: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch cities')),
-      );
-    }
-  }
+  // Future<void> fetchCities() async {
+  //   try {
+  //     final QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('City').get();
+  //     List<Map<String,String>> fetchedCities = snapshot.docs.map((doc) => doc.data()as Map <String,String>).toList();
+  //
+  //     setState(() {
+  //       cityList = fetchedCities;
+  //     });
+  //     print("Cities: $fetchedCities");
+  //   } catch (e) {
+  //     print('Error fetching city data: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to fetch cities')),
+  //     );
+  //   }
+  // }
 
   @override
   void initState() {
     super.initState();
-    fetchCities();
+    // fetchCities();
   }
 
-  List<String> cityList = [];
-  String? selectedCity;
+  List<Map<String,String>> cityList = [];
+  String selectedCity="0";
   List<String> areaList = [];
-  String? selectedArea;
+  String selectedArea="0";
   bool isLoading = false;
   String imageurl='';
 
@@ -255,36 +258,51 @@ class _HomePageState extends State<HomePage> {
            Text('Property Location Details',
             style: TextStyle(fontWeight: FontWeight.bold),),
            SizedBox(height: 20),
-           DropdownButtonFormField<String>(
-           value: selectedCity,
-           decoration: InputDecoration(labelText: 'Select City', border: OutlineInputBorder()),
-           onChanged: (newCityId) {
-          setState(() {
-            selectedCity = newCityId;
-            areaList = [];
-            selectedArea = null;});
-          if (newCityId != null) {
-            fetchAreas(newCityId);
-          }},
-           items: cityList.map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(value),
-          );}).toList(),),
-           SizedBox(height: 20),
-           DropdownButtonFormField<String>(
-            value: selectedArea,
-            decoration: InputDecoration(
-            labelText: 'Select Area', border: OutlineInputBorder()),
-            onChanged: (newArea) {
-            setState(() {
-            selectedArea = newArea;
-          });},
-           items: areaList.map<DropdownMenuItem<String>>((String value) {
-           return DropdownMenuItem<String>(
-           value: value,
-           child: Text(value),);
-           }).toList(),),
+          //  DropdownButtonFormField<String>(
+          //  value: selectedCity,
+          //  decoration: InputDecoration(labelText: 'Select City', border: OutlineInputBorder()),
+          //  onChanged: (newCityId) {
+          //    print("City Selected: $newCityId");
+          // setState(() {
+          //   selectedCity = newCityId;
+          //   areaList = [];
+          //   selectedArea = null;});
+          // if (newCityId != null) {
+          //   fetchAreas(newCityId);
+          //   print("***");
+          // }},
+          //  items: cityList.map<DropdownMenuItem<String>>((String value) {
+          // return DropdownMenuItem<String>(
+          //   value: value,
+          //   child: Text(value),
+          // );}).toList(),),
+          //  SizedBox(height: 20),
+              Dropdown(collectionName: 'City', selectedItem: selectedCity, dropdownName:"City",keyname: 'cityName',onStatusChanged: (p0) {
+                setState(() {
+                  selectedArea="0";
+                  selectedCity=p0;
+
+                });
+              },),
+              SizedBox(height: 20),
+             Areadropdown(selectedItem: selectedArea, cityId: selectedCity,onStatusChanged: (p0) {
+               setState(() {
+                 selectedArea=p0;
+               });
+             },),
+          //     DropdownButtonFormField<String>(
+          //   value: selectedArea,
+          //   decoration: InputDecoration(
+          //   labelText: 'Select Area', border: OutlineInputBorder()),
+          //   onChanged: (newArea) {
+          //   setState(() {
+          //   selectedArea = newArea;
+          // });},
+          //  items: areaList.map<DropdownMenuItem<String>>((String value) {
+          //  return DropdownMenuItem<String>(
+          //  value: value,
+          //  child: Text(value),);
+          //  }).toList(),),
               SizedBox(height: 20),
               TextField(
                 controller: _pincodeController,
@@ -415,8 +433,8 @@ class _HomePageState extends State<HomePage> {
                       choosegenderavailability=null;
                       choosefurnishingtype=null;
                       selectedAmenities.updateAll((key, value) => false);
-                      selectedArea = null;
-                      selectedCity = null;
+                      selectedArea = "0";
+                      selectedCity = "0";
                       //_roomImages.clear();
                     });
                   } else {

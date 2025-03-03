@@ -1,7 +1,7 @@
-import 'package:accomodation/manage_properties/manage%20properties.dart';
+import 'manage_properties.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../Models/property model.dart';
+import '../Models/property_model.dart';
 
 class EditProperty extends StatefulWidget {
   final String propertyId;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add property.dart';
 import 'manage_properties/Property_details from dashboard.dart';
-import 'manage_properties/manage properties.dart';
+import 'manage_properties/manage_properties.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
