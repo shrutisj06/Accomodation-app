@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
-import 'dashboard.dart';
+import 'Dashboard/dashboard.dart';
 import 'package:flutter/material.dart';
 
 Future main() async{

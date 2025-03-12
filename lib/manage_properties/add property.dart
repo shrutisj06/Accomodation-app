@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:accomodation/Widgets/area_dropdown.dart';
 import 'package:accomodation/Widgets/dropdown.dart';
 
-import 'Models/property_model.dart';
-import 'service/database.dart';
+import '../Models/property_model.dart';
+import '../service/database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';

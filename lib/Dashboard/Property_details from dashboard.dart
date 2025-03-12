@@ -1,7 +1,10 @@
+import 'package:accomodation/Dashboard/userdetails_dialog.dart';
 import 'package:flutter/material.dart';
 
+import '../Models/property_model.dart';
+
 class PropertyDetailsScreen extends StatelessWidget {
-  final Map<String, dynamic> property;
+  final Property property;
   final String propertyId;
 
   const PropertyDetailsScreen({
@@ -33,7 +36,7 @@ class PropertyDetailsScreen extends StatelessWidget {
                   children: [
                     // Property Name
                     Text(
-                      property['name'] ?? 'Unnamed Property',
+                      property.name,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -48,7 +51,7 @@ class PropertyDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      property['type'] ?? 'Not available',
+                      property.type ?? '',
                       style: TextStyle(fontSize: 16),
                     ),
                     SizedBox(height: 10),
@@ -60,7 +63,7 @@ class PropertyDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      property['furnishing'] ?? 'Not available',
+                      property.furnishing ?? 'Not mentioned',
                       style: TextStyle(fontSize: 16),
                     ),
                     SizedBox(height: 10),
@@ -73,7 +76,7 @@ class PropertyDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      property['description'] ?? 'No description available',
+                      property.description,
                       style: TextStyle(fontSize: 16),
                     ),
                     SizedBox(height: 10),
@@ -85,8 +88,8 @@ class PropertyDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      property.containsKey('rooms') && property['rooms'] != null
-                          ? property['rooms'].toString()
+                       property.rooms!= null
+                          ? property.rooms.toString()
                           : 'Not available',
                       style: TextStyle(fontSize: 16),
                     ),
@@ -99,7 +102,7 @@ class PropertyDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      property['sharing'] ?? 'Not available',
+                      property.sharing?? 'Not available',
                       style: TextStyle(fontSize: 16),
                     ),
                     SizedBox(height: 10),
@@ -111,7 +114,7 @@ class PropertyDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      property['occupants'] ?? 'Not available',
+                      property.occupants ?? 'Not available',
                       style: TextStyle(fontSize: 16),
                     ),
                     SizedBox(height: 10),
@@ -124,7 +127,7 @@ class PropertyDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      property['city'] ?? 'Not specified',
+                      property.city ?? 'Not specified',
                       style: TextStyle(fontSize: 16),
                     ),
                     SizedBox(height: 10),
@@ -136,7 +139,7 @@ class PropertyDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      property['area'] ?? 'Not specified',
+                      property.area ?? 'Not specified',
                       style: TextStyle(fontSize: 16),
                     ),
                     SizedBox(height: 10),
@@ -148,7 +151,7 @@ class PropertyDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      property['pincode'] ?? 'Not specified',
+                      property.pincode ?? 'Not specified',
                       style: TextStyle(fontSize: 16),
                     ),
                     SizedBox(height: 10),
@@ -160,7 +163,7 @@ class PropertyDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      property['address'] ?? 'Not specified',
+                      property.address ?? 'Not specified',
                       style: TextStyle(fontSize: 16),
                     ),
                     //amenities
@@ -175,9 +178,9 @@ class PropertyDetailsScreen extends StatelessWidget {
                     Wrap(
                       spacing: 10,
                       children: List.generate(
-                        (property['amenities'] as List<dynamic>?)?.length ?? 0,
+                        (property.amenities as List<dynamic>?)?.length ?? 0,
                             (index) => Chip(
-                          label: Text(property['amenities'][index]),
+                          label: Text(property.amenities[index]),
                         ),
                       ),
                     ),
@@ -199,7 +202,7 @@ class PropertyDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      property['ownerName'] ?? 'Not specified',
+                      property.ownerName ?? 'Not specified',
                       style: TextStyle(fontSize: 16),
                     ),
                     SizedBox(height: 10),
@@ -211,9 +214,21 @@ class PropertyDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      property['ownerPhone'] ?? 'Not specified',
+                      property.ownerPhone ?? 'Not specified',
                       style: TextStyle(fontSize: 16),
                     ),
+                    SizedBox(height: 20,),
+                    ElevatedButton(onPressed:(){
+                     // print("Opening dialog with propertyId: $propertyId");
+                     showDialog(context:context, builder: (context)=>UserdetailsDialog(propertyId: propertyId),
+                     );
+                    },
+                      child: Text("Interested",style: TextStyle(color: Colors.black),),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green
+                        ),
+
+                    )
 
 
                   ],

@@ -1,16 +1,22 @@
+import 'package:accomodation/Dashboard/interested_users.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'add property.dart';
-import 'manage_properties/Property_details from dashboard.dart';
-import 'manage_properties/manage_properties.dart';
+import '../Models/property_model.dart';
+import '../manage_properties/add property.dart';
+import 'Property_details from dashboard.dart';
+import '../manage_properties/manage_properties.dart';
 
 class Dashboard extends StatefulWidget {
+
   const Dashboard({super.key});
+
 
   @override
   State<Dashboard> createState() => Dashboard_State();
 }
 class Dashboard_State extends State<Dashboard> {
+  TextEditingController searchController=TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,7 +49,9 @@ class Dashboard_State extends State<Dashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            TextField(controller: searchController),
+            SizedBox(height: 30,)
+            ,Text(
               "Properties For You",
               style: TextStyle(
                 fontSize: 20,
@@ -74,8 +82,9 @@ class Dashboard_State extends State<Dashboard> {
                   return ListView.builder(
                     itemCount: properties.length,
                     itemBuilder: (context, index) {
-                      final property = properties[index].data() as Map<String, dynamic>;
-
+                      final doc = properties[index];
+                      final data = doc.data() as Map<String, dynamic>;
+                      final property = Property.fromMap(data, doc.id);
                       return Card(
                         margin: EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
@@ -87,12 +96,21 @@ class Dashboard_State extends State<Dashboard> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                property['name'] ?? 'Unnamed Property',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                              Row(
+                                children: [
+                                  Text(
+                                    property.name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  Spacer(),
+                                  ElevatedButton(onPressed: (){
+                                    Navigator.push(context,MaterialPageRoute(builder: (context)=>InterestedUsers(propertyId: property.id)));
+                                  }, child: Text("Interested People",style: TextStyle(color: Colors.black)),
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),)
+                                ],
                               ),
                               SizedBox(height: 8),
                               Row(
@@ -106,7 +124,7 @@ class Dashboard_State extends State<Dashboard> {
                                   ),
                                   Expanded(
                                     child: Text(
-                                      property['description'] ?? 'No description available',
+                                      property.description,
                                       style: TextStyle(color: Colors.grey[600]),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
@@ -125,7 +143,7 @@ class Dashboard_State extends State<Dashboard> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => PropertyDetailsScreen(property: property, propertyId: '',),
+                                          builder: (context) => PropertyDetailsScreen(property: property, propertyId: property.id,),
                                         ),
                                       );
                                     },
